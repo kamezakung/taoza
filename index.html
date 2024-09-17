@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ส่งข้อมูลเข้าไลน์</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>สร้างข้อความอัตโนมัติ</h2>
+    
+    <p>เรียนพี่เป้ครับ</p>
+    <p>ขออนุญาตออกไปส่งออเดอร์</p>
+    <p>วันที่ : <span id="currentDate"></span></p>
+
+    <!-- ส่วนข้อมูลลูกค้า -->
+    <div id="customerFields">
+        <div class="customer">
+            <p>ออเดอร์เลขที่ : <input type="text" name="orderNumber[]" placeholder="กรอกเลขที่ออเดอร์"></p>
+            <p>ลูกค้าชื่อ : <input type="text" name="customerName[]" placeholder="กรอกชื่อลูกค้า"></p>
+            <p>ราคา : <input type="text" name="orderPrice[]" placeholder="กรอกราคา"></p>
+        </div>
+    </div>
+
+    <!-- ปุ่มเพิ่มลูกค้า -->
+    <button id="addCustomer" onclick="addCustomer()">เพิ่มลูกค้า</button>
+    <br><br>
+    <button onclick="sendToLine()">ส่งข้อมูลไปไลน์</button>
+
+    <script>
+        const lineToken = "BYh4zyjn1leMPCeJULthQMOeKFRxV8cAhRG5AbNjpha";  // ใส่ Token ที่คุณได้รับจาก LINE Notify
+
+        function setCurrentDate() {
+            var today = new Date();
+            var date = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
+            document.getElementById("currentDate").innerText = date;
+        }
+
+        // ฟังก์ชันเพิ่มลูกค้าใหม่
+        function addCustomer() {
+            var customerFields = document.getElementById("customerFields");
+            var newCustomer = document.createElement("div");
+            newCustomer.classList.add("customer");
+
+            newCustomer.innerHTML = `
+                <p>ออเดอร์เลขที่ : <input type="text" name="orderNumber[]" placeholder="กรอกเลขที่ออเดอร์"></p>
+                <p>ลูกค้าชื่อ : <input type="text" name="customerName[]" placeholder="กรอกชื่อลูกค้า"></p>
+                <p>ราคา : <input type="text" name="orderPrice[]" placeholder="กรอกราคา"></p>
+            `;
+            customerFields.appendChild(newCustomer);
+        }
+
+        // ฟังก์ชันส่งข้อมูลไปยังไลน์
+        function sendToLine() {
+            var orderNumbers = document.getElementsByName("orderNumber[]");
+            var customerNames = document.getElementsByName("customerName[]");
+            var orderPrices = document.getElementsByName("orderPrice[]");
+
+            var message = "";
+
+            for (var i = 0; i < customerNames.length; i++) {
+                message += `เรียนพี่เป้ครับ\\nขออนุญาตออกไปส่งออเดอร์\\nวันที่ : ${document.getElementById("currentDate").innerText}\\nออเดอร์เลขที่ : ${orderNumbers[i].value}\\nลูกค้าชื่อ : ${customerNames[i].value}\\nจำนวนบิล : 1\\nราคา : ${orderPrices[i].value}\\nจึงเรียนมาเพื่อทราบครับ`;
+
+                if (i < customerNames.length - 1) {
+                    message += "\\n------------------------------\\n";
+                }
+            }
+
+            // ส่งข้อความไป LINE Notify
+            fetch("https://notify-api.line.me/api/notify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": `Bearer ${lineToken}`
+                },
+                body: `message=${encodeURIComponent(message)}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("ส่งข้อมูลไปยังไลน์เรียบร้อยแล้ว");
+                } else {
+                    alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+            });
+        }
+
+        window.onload = function() {
+            setCurrentDate();
+        };
+    </script>
+</body>
+</html>
